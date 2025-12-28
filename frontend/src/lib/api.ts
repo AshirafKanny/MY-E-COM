@@ -1,5 +1,17 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+function getAuthHeader() {
+  try {
+    const raw = localStorage.getItem("auth-state");
+    if (!raw) return {} as Record<string, string>;
+    const parsed = JSON.parse(raw) as { accessToken?: string };
+    if (!parsed.accessToken) return {} as Record<string, string>;
+    return { Authorization: `Bearer ${parsed.accessToken}` } as Record<string, string>;
+  } catch (_err) {
+    return {} as Record<string, string>;
+  }
+}
+
 export type ApiOptions = {
   method?: string;
   body?: Record<string, unknown> | FormData;
@@ -15,6 +27,7 @@ async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
     method: options.method || "GET",
     headers: {
       "Content-Type": isFormData ? undefined : "application/json",
+      ...getAuthHeader(),
       ...options.headers,
     },
     credentials: options.credentials || "include",

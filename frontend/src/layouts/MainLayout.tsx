@@ -1,5 +1,6 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
+import { useAuthStore } from "../store/authStore";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -11,6 +12,14 @@ const navLinks = [
 
 export function MainLayout() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  function handleLogout() {
+    clearAuth();
+    navigate("/login");
+  }
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content">
@@ -35,12 +44,23 @@ export function MainLayout() {
             })}
           </nav>
           <div className="flex items-center gap-2 text-sm font-medium">
-            <Link to="/login" className="btn btn-ghost btn-sm">
-              Login
-            </Link>
-            <Link to="/register" className="btn btn-primary btn-sm">
-              Sign up
-            </Link>
+            {user ? (
+              <>
+                <span className="hidden text-sm text-base-content/80 sm:inline">{user.email}</span>
+                <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-ghost btn-sm">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-primary btn-sm">
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

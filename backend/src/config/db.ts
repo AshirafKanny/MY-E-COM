@@ -9,7 +9,9 @@ const stateNames: Record<number, string> = {
 
 export async function connectDB(uri: string) {
   mongoose.set("strictQuery", false);
-  await mongoose.connect(uri);
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 10000,
+  });
   const state = mongoose.connection.readyState;
   console.log(`MongoDB ${stateNames[state] || state}`);
   return mongoose.connection;
