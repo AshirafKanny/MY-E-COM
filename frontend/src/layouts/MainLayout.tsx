@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../store/authStore";
+import { useCartStore } from "../store/cartStore";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -15,6 +16,7 @@ export function MainLayout() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const cartCount = useCartStore((s) => s.items.reduce((acc, item) => acc + item.quantity, 0));
 
   function handleLogout() {
     clearAuth();
@@ -38,7 +40,12 @@ export function MainLayout() {
                   to={link.to}
                   className={`btn btn-ghost btn-sm ${active ? "btn-active" : ""}`}
                 >
-                  {link.label}
+                  <span className="flex items-center gap-2">
+                    {link.label}
+                    {link.to === "/cart" && cartCount > 0 && (
+                      <span className="badge badge-primary badge-sm">{cartCount}</span>
+                    )}
+                  </span>
                 </Link>
               );
             })}
@@ -61,6 +68,9 @@ export function MainLayout() {
                 </Link>
               </>
             )}
+            <Link to="/cart" className="btn btn-ghost btn-sm sm:hidden">
+              Cart{cartCount ? ` (${cartCount})` : ""}
+            </Link>
           </div>
         </div>
       </header>
