@@ -5,6 +5,7 @@ export type CartItem = {
   title: string;
   price: number;
   quantity: number;
+  stock?: number;
 };
 
 export type CartState = {
@@ -22,7 +23,9 @@ function loadPersisted(): CartItem[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as CartItem[]) : [];
+    const items = Array.isArray(parsed) ? (parsed as CartItem[]) : [];
+    const isValidId = (id: string) => /^[a-fA-F0-9]{24}$/.test(id);
+    return items.filter((i) => isValidId(i.productId));
   } catch (_err) {
     return [];
   }
@@ -41,11 +44,15 @@ export const useCartStore = create<CartState>((set) => ({
   addItem: (item) =>
     set((state) => {
       const existing = state.items.find((i) => i.productId === item.productId);
+      const mergedStock = item.stock ?? existing?.stock;
       const nextItems = existing
-        ? state.items.map((i) =>
-            i.productId === item.productId ? { ...i, quantity: i.quantity + item.quantity } : i
-          )
-        : [...state.items, item];
+        ? state.items.map((i) => {
+            if (i.productId !== item.productId) return i;
+            const desired = i.quantity + item.quantity;
+            const maxQty = typeof mergedStock === "number" ? Math.min(mergedStock, desired) : desired;
+            return { ...i, quantity: maxQty, stock: mergedStock };
+          })
+        : [...state.items, { ...item, stock: mergedStock }];
       persist(nextItems);
       return { items: nextItems };
     }),
@@ -58,7 +65,11 @@ export const useCartStore = create<CartState>((set) => ({
   updateQuantity: (productId, quantity) =>
     set((state) => {
       const safeQuantity = Math.max(1, quantity);
-      const nextItems = state.items.map((i) => (i.productId === productId ? { ...i, quantity: safeQuantity } : i));
+      const nextItems = state.items.map((i) => {
+        if (i.productId !== productId) return i;
+        const maxQty = typeof i.stock === "number" ? Math.min(i.stock, safeQuantity) : safeQuantity;
+        return { ...i, quantity: maxQty };
+      });
       persist(nextItems);
       return { items: nextItems };
     }),

@@ -71,4 +71,83 @@ router.post("/", authRequired, requireRole("admin"), async (req, res) => {
   }
 });
 
+router.put("/:id", authRequired, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ message: "invalid product id" });
+  }
+
+  const { title, description, price, image, category, stock, isFeatured } = req.body;
+
+  try {
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "product not found" });
+    }
+
+    if (typeof title !== "undefined") product.title = title;
+    if (typeof description !== "undefined") product.description = description;
+    if (typeof price !== "undefined") product.price = price;
+    if (typeof image !== "undefined") product.image = image;
+    if (typeof category !== "undefined") product.category = category;
+    if (typeof stock !== "undefined") product.stock = stock;
+    if (typeof isFeatured !== "undefined") product.isFeatured = isFeatured;
+
+    await product.save();
+    res.json({ product });
+  } catch (err) {
+    console.error("Update product error", err);
+    res.status(500).json({ message: "failed to update product" });
+  }
+});
+
+router.delete("/:id", authRequired, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ message: "invalid product id" });
+  }
+
+  try {
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return res.status(404).json({ message: "product not found" });
+    }
+
+    res.json({ message: "product deleted" });
+  } catch (err) {
+    console.error("Delete product error", err);
+    res.status(500).json({ message: "failed to delete product" });
+  }
+});
+
+router.patch("/:id/stock", authRequired, requireRole("admin"), async (req, res) => {
+  const { id } = req.params;
+  const { stock } = req.body;
+
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ message: "invalid product id" });
+  }
+
+  if (typeof stock !== "number" || stock < 0) {
+    return res.status(400).json({ message: "stock must be a non-negative number" });
+  }
+
+  try {
+    const product = await Product.findByIdAndUpdate(
+      id,
+      { $set: { stock } },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: "product not found" });
+    }
+
+    res.json({ product });
+  } catch (err) {
+    console.error("Restock product error", err);
+    res.status(500).json({ message: "failed to update stock" });
+  }
+});
+
 export default router;

@@ -1,18 +1,16 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../lib/api";
+import { formatCurrency } from "../lib/currency";
 import { useCartStore } from "../store/cartStore";
+import { useToastStore } from "../store/toastStore";
 
 type Product = {
   _id: string;
   title: string;
   description?: string;
   price: number;
-  image?: string;
-  category?: string;
   stock: number;
   isFeatured: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 };
 
 type ProductsResponse = {
@@ -22,26 +20,93 @@ type ProductsResponse = {
   pageSize: number;
 };
 
+const imageFiles = [
+  "airpod1.webp",
+  "airpods2.webp",
+  "airpods3.webp",
+  "airpods4.webp",
+  "airpods5.webp",
+  "airpods6.webp",
+  "beats1.webp",
+  "beats3.webp",
+  "beats4.webp",
+  "beats5.webp",
+  "beats6.webp",
+  "beats7.webp",
+  "beats8.webp",
+  "cam1.webp",
+  "cam2.webp",
+  "cam3.webp",
+  "cam4.webp",
+  "cam5.webp",
+  "cam6.webp",
+  "charger1.webp",
+  "charger2.webp",
+  "charger3.webp",
+  "charger4.webp",
+  "charger5.webp",
+  "pc1.webp",
+  "pc2.webp",
+  "pc3.webp",
+  "pc4.webp",
+  "pc5.webp",
+  "pc6.webp",
+  "pc7.webp",
+  "phone1.webp",
+  "phone2.webp",
+  "phone3.webp",
+  "phone4.webp",
+  "phone5.webp",
+  "phone6.webp",
+  "speakers10.webp",
+  "speakers11.webp",
+  "speakers2.webp",
+  "speakers3.webp",
+  "speakers4.webp",
+  "speakers5.webp",
+  "speakers6.webp",
+  "speakers7.webp",
+  "speakers8.webp",
+  "speakers9.webp",
+  "speaners1.webp",
+  "usb1.webp",
+  "usb2.webp",
+  "usb3.webp",
+  "usb4.webp",
+  "usb5.webp",
+  "usb6.webp",
+  "usb7.webp",
+  "watch1.webp",
+  "watch2.webp",
+  "watch3.webp",
+  "watch4.webp",
+  "watch5.webp",
+  "watch6.webp",
+  "watch7.webp",
+];
+
+function formatName(file: string) {
+  const base = file.replace(/\.[^.]+$/, "");
+  return base
+    .replace(/[-_]+/g, " ")
+    .replace(/(\d+)/g, " $1")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function imageUrl(file: string) {
+  // Served from frontend/public/product-images after copy
+  return `/product-images/${file}`;
+}
+
 export function Products() {
   const addItem = useCartStore((s) => s.addItem);
+  const addToast = useToastStore((s) => s.addToast);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-
-  // Filters
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [featured, setFeatured] = useState(false);
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-
-  // Pagination
-  const [page, setPage] = useState(1);
-  const pageSize = 12;
-
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,27 +114,14 @@ export function Products() {
     async function load() {
       setLoading(true);
       setError(null);
-
-      const params = new URLSearchParams();
-      if (search.trim()) params.set("q", search.trim());
-      if (category.trim()) params.set("category", category.trim());
-      if (featured) params.set("featured", "true");
-      if (minPrice.trim()) params.set("minPrice", minPrice.trim());
-      if (maxPrice.trim()) params.set("maxPrice", maxPrice.trim());
-      params.set("page", String(page));
-      params.set("limit", String(pageSize));
-
       try {
-        const data = await api.get<ProductsResponse>(`/api/products?${params.toString()}`);
-        if (!cancelled) {
-          setProducts(data.items);
-          setTotal(data.total);
-          setPage(data.page);
-        }
+        const data = await api.get<ProductsResponse>("/api/products?page=1&limit=100");
+        if (!cancelled) setProducts(data.items);
       } catch (err) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : "Failed to load products";
           setError(msg);
+          addToast({ message: msg, type: "error" });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -80,111 +132,45 @@ export function Products() {
     return () => {
       cancelled = true;
     };
-  }, [search, category, featured, minPrice, maxPrice, page, pageSize]);
+  }, [addToast]);
 
-  function handleFiltersSubmit(e: FormEvent) {
-    e.preventDefault();
-    setPage(1);
-  }
-
-  function resetFilters() {
-    setSearch("");
-    setCategory("");
-    setFeatured(false);
-    setMinPrice("");
-    setMaxPrice("");
-    setPage(1);
-  }
-
-  function handleAddToCart(product: Product) {
-    addItem({
-      productId: product._id,
-      title: product.title,
-      price: product.price,
-      quantity: 1,
+  const galleryItems = useMemo(() => {
+    if (!products.length) return [] as Array<Product & { imageFile: string; displayName: string }>;
+    return imageFiles.map((file, idx) => {
+      const product = products[idx % products.length];
+      const displayName = formatName(file);
+      return {
+        ...product,
+        imageFile: file,
+        displayName,
+      };
     });
+  }, [products]);
+
+  function handleAddToCart(item: Product & { displayName: string }) {
+    addItem({
+      productId: item._id,
+      title: item.displayName,
+      price: item.price,
+      quantity: 1,
+      stock: item.stock,
+    });
+    addToast({ message: `${item.displayName} added to cart`, type: "success" });
   }
 
   return (
-    <div className="rounded-2xl border border-base-300 bg-base-100 p-8 shadow-sm">
+    <div className="rounded-2xl border border-[#7a3a00] bg-[#b85c00] p-8 shadow-lg shadow-[#7a3a00]/40 text-orange-50">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Products</h1>
-          <p className="text-base-content/80">Search and add electronics to your cart.</p>
+          <h1 className="text-2xl font-bold">Product Gallery</h1>
+          <p className="text-orange-100/80">Auto-built from every image in your product images folder.</p>
         </div>
-        <div className="text-sm text-base-content/70">Page {page}</div>
+        <span className="badge badge-outline">{galleryItems.length} items</span>
       </div>
-
-      <form className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={handleFiltersSubmit}>
-        <label className="form-control">
-          <span className="label-text">Search</span>
-          <input
-            className="input input-bordered"
-            placeholder="Headphones, TV..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-
-        <label className="form-control">
-          <span className="label-text">Category</span>
-          <input
-            className="input input-bordered"
-            placeholder="electronics, audio..."
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
-        </label>
-
-        <div className="grid grid-cols-2 gap-2">
-          <label className="form-control">
-            <span className="label-text">Min price</span>
-            <input
-              className="input input-bordered"
-              type="number"
-              min="0"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-            />
-          </label>
-          <label className="form-control">
-            <span className="label-text">Max price</span>
-            <input
-              className="input input-bordered"
-              type="number"
-              min="0"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-            />
-          </label>
-        </div>
-
-        <label className="form-control">
-          <span className="label-text">Featured</span>
-          <div className="flex items-center gap-3 rounded-lg border border-base-300 px-3 py-2">
-            <input
-              type="checkbox"
-              className="checkbox"
-              checked={featured}
-              onChange={(e) => setFeatured(e.target.checked)}
-            />
-            <span className="text-sm">Only featured</span>
-          </div>
-        </label>
-
-        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4">
-          <button type="submit" className="btn btn-primary btn-sm">
-            Apply
-          </button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={resetFilters}>
-            Reset
-          </button>
-        </div>
-      </form>
 
       <div className="mt-6">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-base-content/70">
+          <div className="flex items-center gap-2 text-sm text-orange-100/80">
             <span className="loading loading-spinner loading-sm" />
             Loading products...
           </div>
@@ -193,30 +179,44 @@ export function Products() {
             <span>Failed to load products.</span>
             <span className="font-semibold">{error}</span>
           </div>
-        ) : products.length === 0 ? (
-          <div className="text-sm text-base-content/70">No products found for these filters.</div>
+        ) : galleryItems.length === 0 ? (
+          <div className="text-sm text-orange-100/80">No products available.</div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <article key={product._id} className="card border border-base-300 bg-base-100 shadow-sm">
-                <div className="card-body">
+          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {galleryItems.map((item) => (
+              <article
+                key={item._id}
+                className="card border border-[#7a3a00] bg-[rgba(11,11,15,0.82)] shadow-lg shadow-black/30 text-sm transition-transform duration-200 hover:scale-[1.02] cursor-pointer"
+              >
+                <figure className="aspect-video overflow-hidden bg-[rgba(18,18,24,0.78)]">
+                  <img
+                    src={imageUrl(item.imageFile)}
+                    alt={item.displayName}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </figure>
+                <div className="card-body gap-2 p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="card-title text-lg">{product.title}</h3>
-                    {product.isFeatured && <span className="badge badge-secondary">Featured</span>}
+                    <div className="card-title text-base leading-tight">{item.displayName}</div>
+                    {item.isFeatured && <span className="badge badge-secondary">Featured</span>}
                   </div>
-                  {product.category && <p className="text-xs uppercase text-base-content/60">{product.category}</p>}
-                  <p className="text-sm text-base-content/80 line-clamp-2">{product.description || "No description."}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">${product.price.toFixed(2)}</span>
-                    <span className="text-xs text-base-content/60">Stock: {product.stock ?? 0}</span>
+                  <p className="text-xs text-base-content/70 line-clamp-2">Handpicked from your product images folder.</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-semibold">{formatCurrency(item.price)}</span>
+                    <span className="flex items-center gap-2 text-xs text-base-content/60">
+                      Stock: {item.stock}
+                      {item.stock > 0 && item.stock <= 3 && <span className="badge badge-warning badge-xs">Low</span>}
+                      {item.stock === 0 && <span className="badge badge-neutral badge-xs">Out</span>}
+                    </span>
                   </div>
                   <div className="card-actions justify-end">
                     <button
                       className="btn btn-primary btn-sm"
-                      onClick={() => handleAddToCart(product)}
-                      disabled={product.stock === 0}
+                      disabled={item.stock === 0}
+                      onClick={() => handleAddToCart(item)}
                     >
-                      {product.stock === 0 ? "Out of stock" : "Add to cart"}
+                      {item.stock === 0 ? "Out of stock" : "Add to cart"}
                     </button>
                   </div>
                 </div>
@@ -224,22 +224,6 @@ export function Products() {
             ))}
           </div>
         )}
-      </div>
-
-      <div className="mt-8 flex items-center justify-between text-sm text-base-content/70">
-        <button className="btn btn-ghost btn-sm" disabled={page <= 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-          Previous
-        </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <button
-          className="btn btn-ghost btn-sm"
-          disabled={loading || page >= totalPages}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-        >
-          Next
-        </button>
       </div>
     </div>
   );
