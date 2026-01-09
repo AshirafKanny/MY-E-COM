@@ -217,16 +217,12 @@ export function MainLayout() {
 
       <footer className="border-t border-base-300/60 bg-base-100/80 text-sm text-base-content/80">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-6 flex items-center">
             <img
               src="/payment%20methods/logo3.png"
               alt="Brand logo"
               className="h-56 w-56 rounded-md object-contain"
             />
-            <div>
-              <div className="text-lg font-bold text-base-content">KennyCom</div>
-              <div className="text-xs text-base-content/70">Smart shopping made easy.</div>
-            </div>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -261,17 +257,21 @@ export function MainLayout() {
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-3">
               <div className="font-semibold text-base-content">International</div>
-              <div className="flex flex-wrap gap-2 text-xs text-base-content/70">
+              <div className="flex flex-wrap gap-1.5 text-xs text-base-content/70">
                 {[
                   "Kenya",
                   "Nigeria",
                   "Ghana",
                   "Morocco",
                   "Senegal",
+                  "Uganda",
                   "Algeria",
                   "Egypt",
                 ].map((c) => (
-                  <span key={c} className="badge badge-outline badge-xs">
+                  <span
+                    key={c}
+                    className="inline-flex items-center rounded-full bg-base-200/40 px-2 py-0.5 text-xs text-base-content/80 shadow-sm border border-transparent"
+                  >
                     {c}
                   </span>
                 ))}

@@ -237,8 +237,11 @@ export function Home() {
           viewport={{ once: true, amount: 0.25 }}
         >
           <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
-            <h1 className="w-full text-center text-3xl font-bold text-base-content drop-shadow sm:w-auto sm:text-left sm:text-4xl">Main Categories</h1>
-            <Link to="/products" className="btn btn-ghost btn-sm text-base-content border border-base-content/40 hover:border-base-content/60">
+            <h1 className="w-full text-center text-3xl font-bold text-white drop-shadow-lg sm:w-auto sm:text-left sm:text-4xl">Main Categories</h1>
+            <Link
+              to="/products"
+              className="btn btn-ghost btn-sm text-white border border-white/70 hover:border-white hover:bg-white/10"
+            >
               View all
             </Link>
           </motion.div>

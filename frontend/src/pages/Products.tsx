@@ -163,7 +163,6 @@ export function Products() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Product Gallery</h1>
-          <p className="text-base-content/70">Auto-built from every image in your product images folder.</p>
         </div>
         <span className="badge badge-outline">{galleryItems.length} items</span>
       </div>
