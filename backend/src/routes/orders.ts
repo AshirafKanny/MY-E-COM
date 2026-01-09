@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { authRequired, requireRole } from "../middleware/auth.js";
 import { Order } from "../models/Order.js";
 import { Product } from "../models/Product.js";
+import { env } from "../config/env.js";
+import { stripe } from "../utils/stripe.js";
 
 const router = Router();
 
@@ -25,14 +27,43 @@ type OrderItemInput = {
   quantity?: number;
 };
 
+type ShippingAddressInput = {
+  fullName?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
+};
+
 router.post("/", authRequired, async (req, res) => {
   const itemsInput = Array.isArray(req.body?.items) ? (req.body.items as OrderItemInput[]) : [];
   const paymentMethod: AllowedPaymentMethod = allowedPaymentMethods.includes(req.body?.paymentMethod)
     ? (req.body.paymentMethod as AllowedPaymentMethod)
     : "cod";
+  const shippingInput = (req.body?.shippingAddress || {}) as ShippingAddressInput;
+
+  if (paymentMethod === "card" && !stripe) {
+    return res.status(400).json({ message: "Card payments are not configured" });
+  }
 
   if (!itemsInput.length) {
     return res.status(400).json({ message: "items are required" });
+  }
+
+  const requiredShippingFields: (keyof ShippingAddressInput)[] = [
+    "fullName",
+    "phone",
+    "addressLine1",
+    "city",
+    "country",
+    "postalCode",
+  ];
+
+  const missingShipping = requiredShippingFields.find((key) => !shippingInput[key] || typeof shippingInput[key] !== "string");
+  if (missingShipping) {
+    return res.status(400).json({ message: `shippingAddress.${missingShipping} is required` });
   }
 
   const validItems = itemsInput.filter(
@@ -80,6 +111,9 @@ router.post("/", authRequired, async (req, res) => {
 
   const total = orderItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
+  let paymentIntentClientSecret: string | undefined;
+  let stripePaymentIntentId: string | undefined;
+
   try {
     // Decrement stock for each item atomically by filtering on available stock
     const bulkOps = orderItems.map((item) => ({
@@ -94,16 +128,48 @@ router.post("/", authRequired, async (req, res) => {
       return res.status(409).json({ message: "not enough stock for one or more items" });
     }
 
+    if (paymentMethod === "card" && stripe) {
+      const intent = await stripe.paymentIntents.create({
+        amount: Math.round(total * 100),
+        currency: env.stripeCurrency,
+        metadata: {
+          userId: req.user!.id,
+          orderUserEmail: req.user!.email,
+        },
+        automatic_payment_methods: { enabled: true },
+      });
+
+      stripePaymentIntentId = intent.id;
+      paymentIntentClientSecret = intent.client_secret ?? undefined;
+    }
+
     const order = new Order({
       user: req.user!.id,
       items: orderItems,
       total,
       status: "pending",
       paymentMethod,
+      stripePaymentIntentId,
+      shippingAddress: {
+        fullName: String(shippingInput.fullName).trim(),
+        phone: String(shippingInput.phone).trim(),
+        addressLine1: String(shippingInput.addressLine1).trim(),
+        addressLine2: shippingInput.addressLine2 ? String(shippingInput.addressLine2).trim() : undefined,
+        city: String(shippingInput.city).trim(),
+        country: String(shippingInput.country).trim(),
+        postalCode: String(shippingInput.postalCode).trim(),
+      },
+      statusHistory: [
+        {
+          status: "pending",
+          at: new Date(),
+          note: "Order placed",
+        },
+      ],
     });
 
     await order.save();
-    res.status(201).json({ order });
+    res.status(201).json({ order, paymentIntentClientSecret });
   } catch (err) {
     console.error("Create order error", err);
     res.status(500).json({ message: "failed to create order" });
@@ -162,6 +228,7 @@ router.patch("/:id/status", authRequired, requireRole("admin"), async (req, res)
       order.paidAt = order.paidAt || new Date();
       order.paymentMethod = (order.paymentMethod || "cod") as AllowedPaymentMethod;
     }
+    order.statusHistory.push({ status: nextStatus, at: new Date(), note: `Admin set to ${nextStatus}` });
     await order.save();
     res.json({ order });
   } catch (err) {
@@ -190,9 +257,24 @@ router.post("/:id/pay", authRequired, async (req, res) => {
       return res.status(400).json({ message: `cannot pay order in status ${order.status}` });
     }
 
-    order.paymentMethod = method;
+    if (order.paymentMethod === "cod" && method === "cod") {
+      // COD cannot be "paid" via this endpoint
+      return res.status(400).json({ message: "cash on delivery orders remain pending" });
+    }
+
+    if (!stripe || !order.stripePaymentIntentId) {
+      return res.status(400).json({ message: "card payment not available for this order" });
+    }
+
+    const intent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+    if (intent.status !== "succeeded") {
+      return res.status(400).json({ message: `payment intent not successful (${intent.status})` });
+    }
+
+    order.paymentMethod = "card";
     order.status = "paid";
-    order.paidAt = new Date();
+    order.paidAt = new Date(intent.created * 1000);
+    order.statusHistory.push({ status: "paid", at: order.paidAt, note: "Payment succeeded" });
     await order.save();
 
     res.json({ order });

@@ -1,0 +1,3 @@
+pip install git-filter-repo
+git filter-repo --path backend/.env --invert-paths
+git push origin --force

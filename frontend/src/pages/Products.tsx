@@ -159,18 +159,18 @@ export function Products() {
   }
 
   return (
-    <div className="rounded-2xl border border-[#7a3a00] bg-[#b85c00] p-8 shadow-lg shadow-[#7a3a00]/40 text-orange-50">
+    <div className="rounded-2xl p-8">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Product Gallery</h1>
-          <p className="text-orange-100/80">Auto-built from every image in your product images folder.</p>
+          <p className="text-base-content/70">Auto-built from every image in your product images folder.</p>
         </div>
         <span className="badge badge-outline">{galleryItems.length} items</span>
       </div>
 
       <div className="mt-6">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm text-orange-100/80">
+          <div className="flex items-center gap-2 text-sm text-base-content/70">
             <span className="loading loading-spinner loading-sm" />
             Loading products...
           </div>
@@ -180,15 +180,15 @@ export function Products() {
             <span className="font-semibold">{error}</span>
           </div>
         ) : galleryItems.length === 0 ? (
-          <div className="text-sm text-orange-100/80">No products available.</div>
+          <div className="text-sm text-base-content/70">No products available.</div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {galleryItems.map((item) => (
               <article
                 key={item._id}
-                className="card border border-[#7a3a00] bg-[rgba(11,11,15,0.82)] shadow-lg shadow-black/30 text-sm transition-transform duration-200 hover:scale-[1.02] cursor-pointer"
+                className="card border border-base-300 bg-base-100 shadow-sm text-sm transition-transform duration-200 hover:scale-[1.02] cursor-pointer"
               >
-                <figure className="aspect-video overflow-hidden bg-[rgba(18,18,24,0.78)]">
+                <figure className="aspect-video overflow-hidden bg-base-200">
                   <img
                     src={imageUrl(item.imageFile)}
                     alt={item.displayName}
@@ -202,9 +202,9 @@ export function Products() {
                     {item.isFeatured && <span className="badge badge-secondary">Featured</span>}
                   </div>
                   <p className="text-xs text-base-content/70 line-clamp-2">Handpicked from your product images folder.</p>
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm text-base-content">
                     <span className="font-semibold">{formatCurrency(item.price)}</span>
-                    <span className="flex items-center gap-2 text-xs text-base-content/60">
+                    <span className="flex items-center gap-2 text-xs text-base-content/70">
                       Stock: {item.stock}
                       {item.stock > 0 && item.stock <= 3 && <span className="badge badge-warning badge-xs">Low</span>}
                       {item.stock === 0 && <span className="badge badge-neutral badge-xs">Out</span>}

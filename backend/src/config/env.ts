@@ -9,6 +9,9 @@ const env = {
   mongoUri: process.env.MONGODB_URI || "mongodb://localhost:27017/my-e-com",
   jwtSecret: process.env.JWT_SECRET || "dev-secret-change-me",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+  stripeCurrency: process.env.STRIPE_CURRENCY || "usd",
 };
 
 export { env };

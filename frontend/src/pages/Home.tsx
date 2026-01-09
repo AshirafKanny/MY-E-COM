@@ -8,22 +8,52 @@ import { formatCurrency } from "../lib/currency";
 
 const heroProducts = [
   {
-    title: "Noise-Canceling Headphones",
+    title: "Electronic Gadgets",
+    slug: "electronic-gadgets",
     price: 249000,
     badge: "Bestseller",
-    blurb: "Immersive sound with 35h battery and adaptive EQ.",
+    blurb:
+      "Explore a wide range of innovative electronic gadgets designed to make life smarter, easier, and more connected. From the latest smart devices and accessories to everyday tech essentials",
   },
   {
-    title: "4K OLED TV",
+    title: "Home & Living",
+    slug: "home-living",
     price: 1299000,
     badge: "New",
-    blurb: "Ultra-thin design with vivid HDR and 120Hz refresh.",
+    blurb:
+      "Create a comfortable, stylish, and functional living space with our Home & Living collection. From home essentials and décor to practical household solutions, our products are designed to enhance everyday life.",
   },
   {
-    title: "Smartwatch",
+    title: "Fashion & Apparel",
+    slug: "fashion-apparel",
     price: 299000,
     badge: "Trending",
-    blurb: "Health tracking, GPS, and 7-day battery life.",
+    blurb:
+      "Discover the latest trends and timeless styles in our Fashion & Apparel collection. From everyday essentials to statement pieces, our selection blends comfort, quality, and modern design. Whether you’re dressing for work",
+  },
+  {
+    title: "Beauty & Personal Care",
+    slug: "beauty-personal-care",
+    price: 69000,
+    badge: "New",
+    blurb:
+      "Discover a carefully curated selection of beauty and personal care products designed to help you look and feel your best every day. From skincare and haircare essentials to grooming and wellness products",
+  },
+  {
+    title: "Sports & Fitness",
+    slug: "sports-fitness",
+    price: 119000,
+    badge: "Hot",
+    blurb:
+      "Stay active, strong, and motivated with our Sports & Fitness collection. From workout gear and fitness equipment to sports accessories and recovery essentials, our products are designed to support performance",
+  },
+  {
+    title: "Books, Education & Stationery",
+    slug: "books-education-stationery",
+    price: 229000,
+    badge: "Deal",
+    blurb:
+      "Inspire learning, creativity, and productivity with our Books, Education & Stationery collection. From educational materials and reference books to notebooks, writing tools, and study essentials, our products support learners",
   },
 ];
 
@@ -144,22 +174,40 @@ export function Home() {
 
   return (
     <>
-      <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] bg-[#b85c00] text-orange-50 rounded-3xl p-4 sm:p-6 border border-[#7a3a00] shadow-lg shadow-[#7a3a00]/40">
-        <HeroHighlight containerClassName="h-full min-h-[26rem] rounded-2xl border border-base-300 bg-base-100/80 shadow-lg" className="w-full">
+      <section
+        className="relative grid gap-8 overflow-hidden rounded-3xl border border-base-300 bg-base-100 p-4 shadow-xl sm:p-6"
+        style={{
+          backgroundImage: "url('/payment%20methods/online%20shoppings2.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/65 via-black/45 to-black/30" aria-hidden />
+
+        <div className="relative h-full min-h-[26rem] rounded-2xl border border-base-200/60 bg-black/35 shadow-lg backdrop-blur-lg">
           <motion.div
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.3 }}
             className="w-full max-w-3xl px-6 py-10 sm:px-10 sm:py-12"
+            style={{
+              backgroundImage:
+                "linear-gradient(120deg, rgba(0,0,0,0.75), rgba(0,0,0,0.35)), url('/payment%20methods/online%20shoppings2.jpg')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+              borderRadius: "1rem",
+            }}
           >
-            <motion.p variants={fadeUp} className="badge badge-primary badge-lg mb-4">
+            <motion.p variants={fadeUp} className="badge badge-primary badge-lg mb-4 text-white">
               Electronics
             </motion.p>
-            <motion.h1 variants={fadeUp} className="text-3xl font-extrabold leading-tight sm:text-4xl">
-              Shop the latest electronics with <Highlight className="text-black dark:text-white">fast</Highlight> delivery & flexible payments.
+            <motion.h1 variants={fadeUp} className="text-3xl font-extrabold leading-tight text-white drop-shadow sm:text-4xl">
+              Shop the latest electronics with <Highlight className="text-primary-content">fast</Highlight> delivery & flexible payments.
             </motion.h1>
-            <motion.p variants={fadeUp} className="mt-4 text-base text-base-content/80 sm:text-lg">
+            <motion.p variants={fadeUp} className="mt-4 text-base text-white/90 drop-shadow sm:text-lg">
               Curated gadgets, transparent pricing, and a checkout experience inspired by Amazon and Shopify—built for learning.
             </motion.p>
             <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-3">
@@ -167,19 +215,19 @@ export function Home() {
                 Browse products
                 <ArrowRightIcon className="h-5 w-5" />
               </Link>
-              <Link to="/cart" className="btn btn-ghost btn-lg">
+              <Link to="/cart" className="btn btn-outline btn-lg text-white border-white/80 hover:border-white hover:bg-white/10">
                 View cart
               </Link>
             </motion.div>
             <motion.div variants={stagger} className="mt-8 grid gap-4 sm:grid-cols-3">
               {["Secure checkout", "24/7 support", "Easy returns"].map((item) => (
-                <motion.div key={item} variants={fadeUp} className="rounded-xl border border-base-300 bg-base-200/60 p-4 text-sm font-medium">
+                <motion.div key={item} variants={fadeUp} className="rounded-xl border border-white/25 bg-white/10 p-4 text-sm font-medium text-white/90">
                   {item}
                 </motion.div>
               ))}
             </motion.div>
           </motion.div>
-        </HeroHighlight>
+        </div>
 
         <motion.div
           className="space-y-4"
@@ -188,44 +236,45 @@ export function Home() {
           whileInView="show"
           viewport={{ once: true, amount: 0.25 }}
         >
-          <motion.div variants={fadeUp} className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Featured picks</h2>
-            <Link to="/products" className="btn btn-ghost btn-sm">
+          <motion.div variants={fadeUp} className="flex flex-col items-center gap-3 text-center">
+            <h1 className="w-full text-center text-3xl font-bold text-base-content drop-shadow sm:w-auto sm:text-left sm:text-4xl">Main Categories</h1>
+            <Link to="/products" className="btn btn-ghost btn-sm text-base-content border border-base-content/40 hover:border-base-content/60">
               View all
             </Link>
           </motion.div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-            {heroProducts.map((item, idx) => (
-              <motion.article
-                key={item.title}
-                variants={fadeUp}
-                transition={{ delay: 0.05 * idx, duration: 0.45, ease: "easeOut" }}
-                className="card border border-base-300 bg-base-100 shadow-sm overflow-hidden transition duration-200 hover:scale-[1.02] cursor-pointer"
-              >
-                <div className="relative bg-black text-white">
-                  <div className="absolute inset-0">
-                    <SparklesCore particleCount={90} className="h-full w-full" />
-                    <div className="absolute inset-x-16 top-0 h-[2px] w-3/4 bg-gradient-to-r from-transparent via-indigo-500 to-transparent blur-sm" />
-                    <div className="absolute inset-x-16 top-0 h-px w-3/4 bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
-                    <div className="absolute inset-x-40 top-0 h-[4px] w-1/3 bg-gradient-to-r from-transparent via-sky-500 to-transparent blur-sm" />
-                    <div className="absolute inset-x-40 top-0 h-px w-1/3 bg-gradient-to-r from-transparent via-sky-500 to-transparent" />
-                    <div className="absolute inset-0 bg-black [mask-image:radial-gradient(280px_160px_at_top,transparent_20%,white)]" />
-                  </div>
-                  <div className="card-body relative z-10 text-base-content">
-                    <div className="flex items-center gap-2 text-white">
-                      <span className="badge badge-secondary">{item.badge}</span>
-                      <span className="text-xs text-white/80">{formatCurrency(item.price)}</span>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[0, 1].map((col) => (
+              <div key={col} className="space-y-4">
+                {heroProducts.slice(col * 3, col * 3 + 3).map((item, idx) => (
+                  <motion.article
+                    key={item.title}
+                    variants={fadeUp}
+                    transition={{ delay: 0.05 * (col * 3 + idx), duration: 0.45, ease: "easeOut" }}
+                    className="card overflow-hidden border border-white/30 bg-white/12 backdrop-blur-md shadow-lg transition duration-200 hover:scale-[1.06] hover:border-[#b85c00] hover:cursor-pointer"
+                  >
+                    <div className="relative bg-gradient-to-br from-white/15 via-white/10 to-white/5 text-white">
+                      <div className="absolute inset-0 opacity-70">
+                        <SparklesCore particleCount={70} className="h-full w-full" />
+                      </div>
+                      <div className="card-body relative z-10">
+                        <div className="flex items-center gap-2 text-sm text-white/90">
+                          <span className="badge badge-secondary text-white">{item.badge}</span>
+                        </div>
+                        <h3 className="card-title text-xl text-white">{item.title}</h3>
+                        <p className="text-sm text-white/80">{item.blurb}</p>
+                        <div className="card-actions justify-end">
+                          <Link
+                            to={`/categories/${item.slug}`}
+                            className="btn btn-sm border-none bg-[#b85c00] text-orange-50 shadow-sm hover:brightness-105"
+                          >
+                            Visit
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="card-title text-xl text-white">{item.title}</h3>
-                    <p className="text-sm text-white/80">{item.blurb}</p>
-                    <div className="card-actions justify-end">
-                      <button className="btn btn-sm bg-[#b85c00] text-orange-50 border-[#7a3a00] hover:bg-[#a14f00] hover:border-[#7a3a00]">
-                        Add to cart
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.article>
+                  </motion.article>
+                ))}
+              </div>
             ))}
           </div>
         </motion.div>
@@ -241,9 +290,9 @@ export function Home() {
         <motion.h1 variants={fadeUp} className="text-2xl font-bold text-center">
           Most Trending Products
         </motion.h1>
-        <div className="relative mt-4 overflow-hidden rounded-xl border border-[#7a3a00] bg-[#b85c00]">
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#b85c00] via-[#b85c00]/70 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#b85c00] via-[#b85c00]/70 to-transparent" />
+        <div className="relative mt-4 overflow-hidden rounded-xl border border-base-300 bg-base-200">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-base-200 via-base-200/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-base-200 via-base-200/70 to-transparent" />
           <div
             className="flex gap-6 py-6"
             style={{ animation: "marquee-right 28s linear infinite", width: "200%" }}
@@ -253,7 +302,7 @@ export function Home() {
                 {trendingImages.map((img) => (
                   <div
                     key={`${loop}-${img}`}
-                    className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-base-300 bg-base-100/80 shadow-sm sm:h-28 sm:w-28"
+                    className="h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm sm:h-28 sm:w-28"
                   >
                     <img src={`/product-images/${img}`} alt={img.replace(/\.webp$/, "")} className="h-full w-full object-cover" />
                   </div>

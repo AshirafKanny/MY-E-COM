@@ -6,12 +6,15 @@ import { Product } from "../models/Product.js";
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const { q, category, featured, minPrice, maxPrice, page = "1", limit = "12" } = req.query;
+  const { q, category, featured, minPrice, maxPrice, inStock, sort = "newest", page = "1", limit = "12" } = req.query;
 
   const filters: Record<string, unknown> = {};
 
   if (q && typeof q === "string") {
-    filters.title = { $regex: q, $options: "i" };
+    filters.$or = [
+      { title: { $regex: q, $options: "i" } },
+      { description: { $regex: q, $options: "i" } },
+    ];
   }
 
   if (category && typeof category === "string") {
@@ -20,6 +23,10 @@ router.get("/", async (req, res) => {
 
   if (featured === "true") {
     filters.isFeatured = true;
+  }
+
+  if (inStock === "true") {
+    filters.stock = { $gt: 0 };
   }
 
   if (minPrice || maxPrice) {
@@ -32,12 +39,30 @@ router.get("/", async (req, res) => {
   const pageSize = Math.min(Math.max(Number(limit) || 12, 1), 50);
   const skip = (pageNum - 1) * pageSize;
 
+  const sortMap: Record<string, Record<string, 1 | -1>> = {
+    newest: { createdAt: -1 },
+    priceAsc: { price: 1 },
+    priceDesc: { price: -1 },
+    stockDesc: { stock: -1 },
+  };
+  const sortOption = sortMap[String(sort)] || sortMap.newest;
+
   const [items, total] = await Promise.all([
-    Product.find(filters).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
+    Product.find(filters).sort(sortOption).skip(skip).limit(pageSize),
     Product.countDocuments(filters),
   ]);
 
   res.json({ items, total, page: pageNum, pageSize });
+});
+
+router.get("/categories", async (_req, res) => {
+  try {
+    const categories = await Product.distinct("category");
+    res.json({ categories: categories.filter(Boolean).sort() });
+  } catch (err) {
+    console.error("List categories error", err);
+    res.status(500).json({ message: "failed to list categories" });
+  }
 });
 
 router.get("/:id", async (req, res) => {

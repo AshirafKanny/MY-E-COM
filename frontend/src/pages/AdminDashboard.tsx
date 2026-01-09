@@ -21,6 +21,10 @@ type ProductsResponse = {
   pageSize: number;
 };
 
+type CategoriesResponse = {
+  categories: string[];
+};
+
 type Draft = Partial<Product>;
 
 type Order = {
@@ -31,6 +35,7 @@ type Order = {
   paymentMethod?: string;
   paidAt?: string;
   createdAt: string;
+  statusHistory?: { status: Order["status"]; at: string; note?: string }[];
   items: {
     title: string;
     quantity: number;
@@ -71,6 +76,14 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 12;
+
   const [creating, setCreating] = useState(false);
   const [createDraft, setCreateDraft] = useState<Draft>({ title: "", price: 0, stock: 0, isFeatured: false });
 
@@ -93,8 +106,16 @@ export function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.get<ProductsResponse>("/api/products?limit=100");
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(pageSize));
+      if (search.trim()) params.set("q", search.trim());
+      if (category) params.set("category", category);
+      if (sort) params.set("sort", sort);
+
+      const data = await api.get<ProductsResponse>(`/api/products?${params.toString()}`);
       setProducts(data.items);
+      setTotal(data.total);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load products";
       setError(msg);
@@ -105,9 +126,31 @@ export function AdminDashboard() {
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        const data = await api.get<CategoriesResponse>("/api/products/categories");
+        if (!cancelled) setCategories(data.categories);
+      } catch (_err) {
+        /* non-blocking */
+      }
+    }
+
+    loadCategories();
     loadOrders();
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      load();
+    }, 200);
+    return () => clearTimeout(debounce);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, category, sort, page]);
 
   async function loadOrders() {
     setOrdersLoading(true);
@@ -222,7 +265,10 @@ export function AdminDashboard() {
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
             <p className="text-base-content/80">Manage products (create, update, delete).</p>
           </div>
-          <div className="text-sm text-base-content/70">Inventory value: {formatCurrency(totalValue)}</div>
+          <div className="text-sm text-base-content/70 flex flex-col items-end">
+            <span>Inventory value: {formatCurrency(totalValue)}</span>
+            <span>{total} products</span>
+          </div>
         </div>
         {error && <p className="mt-3 text-sm text-error">{error}</p>}
         {loading && (
@@ -318,9 +364,63 @@ export function AdminDashboard() {
       <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Products</h2>
-          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
-            Refresh
-          </button>
+          <div className="flex items-center gap-2 text-sm">
+            <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
+              Refresh
+            </button>
+            <span className="badge badge-outline">Page {page}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <div className="md:col-span-2">
+            <label className="form-control">
+              <span className="label-text">Search</span>
+              <input
+                className="input input-bordered"
+                value={search}
+                placeholder="Title or description"
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+              />
+            </label>
+          </div>
+          <label className="form-control">
+            <span className="label-text">Category</span>
+            <select
+              className="select select-bordered"
+              value={category}
+              onChange={(e) => {
+                setPage(1);
+                setCategory(e.target.value);
+              }}
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="form-control">
+            <span className="label-text">Sort</span>
+            <select
+              className="select select-bordered"
+              value={sort}
+              onChange={(e) => {
+                setPage(1);
+                setSort(e.target.value);
+              }}
+            >
+              <option value="newest">Newest</option>
+              <option value="priceAsc">Price: Low to High</option>
+              <option value="priceDesc">Price: High to Low</option>
+              <option value="stockDesc">Stock: High to Low</option>
+            </select>
+          </label>
         </div>
 
         <div className="mt-4 overflow-x-auto">
@@ -438,6 +538,20 @@ export function AdminDashboard() {
             </tbody>
           </table>
         </div>
+
+        <div className="mt-4 flex items-center justify-between text-sm text-base-content/70">
+          <button className="btn btn-outline btn-sm" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+            Previous
+          </button>
+          <div>Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)} of {total}</div>
+          <button
+            className="btn btn-outline btn-sm"
+            disabled={page * pageSize >= total}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
@@ -497,6 +611,20 @@ export function AdminDashboard() {
                         </option>
                       ))}
                     </select>
+                    {order.statusHistory && order.statusHistory.length > 0 && (
+                      <div className="mt-2 space-y-1 text-[11px] text-base-content/70">
+                        {order.statusHistory
+                          .slice()
+                          .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+                          .slice(0, 2)
+                          .map((h, idx) => (
+                            <div key={`${h.status}-${idx}`} className="flex items-center gap-2">
+                              <span className={statusBadge(h.status)}>{h.status}</span>
+                              <span>{new Date(h.at).toLocaleString()}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </td>
                   <td>
                     {orderSavingId === order._id && <span className="loading loading-spinner loading-xs" />}

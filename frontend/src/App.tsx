@@ -3,12 +3,14 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { Cart } from "./pages/Cart";
+import { Checkout } from "./pages/Checkout";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { Orders } from "./pages/Orders";
 import { Products } from "./pages/Products";
 import { ProductDetail } from "./pages/ProductDetail";
 import { Register } from "./pages/Register";
+import { CategoryPage } from "./pages/CategoryPage";
 import { api } from "./lib/api";
 import { useAuthStore, User } from "./store/authStore";
 
@@ -94,9 +96,18 @@ function App() {
       <Routes>
         <Route element={<MainLayout />}>
           <Route index element={<Home />} />
+          <Route path="categories/:slug" element={<CategoryPage />} />
           <Route path="products" element={<Products />} />
           <Route path="products/:id" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <Checkout />
+              </RequireAuth>
+            }
+          />
           <Route
             path="orders"
             element={
