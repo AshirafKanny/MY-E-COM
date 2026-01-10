@@ -16,9 +16,13 @@ type LoginBody = {
   password?: string;
 };
 
-function toPublicUser(user: { id: string; email: string; name?: string; role: string }) {
+function getUserId(user: { id?: string; _id?: { toString(): string } }) {
+  return user.id ?? user._id?.toString() ?? "";
+}
+
+function toPublicUser(user: { id?: string; _id?: { toString(): string }; email: string; name?: string; role: string }) {
   return {
-    id: user.id,
+    id: getUserId(user),
     email: user.email,
     name: user.name,
     role: user.role,

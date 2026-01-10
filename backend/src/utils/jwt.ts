@@ -8,15 +8,20 @@ export type AccessTokenPayload = jwt.JwtPayload & {
   email: string;
 };
 
-export function signAccessToken(user: IUser) {
+function getUserId(user: IUser & { _id?: { toString(): string }; id?: string }) {
+  return user.id ?? user._id?.toString() ?? "";
+}
+
+export function signAccessToken(user: IUser & { _id?: { toString(): string }; id?: string }) {
+  const sub = getUserId(user);
   return jwt.sign(
     {
-      sub: user.id,
+      sub,
       role: user.role,
       email: user.email,
     },
-    env.jwtSecret,
-    { expiresIn: env.jwtExpiresIn }
+    env.jwtSecret as jwt.Secret,
+    { expiresIn: env.jwtExpiresIn as jwt.SignOptions["expiresIn"] }
   );
 }
 
