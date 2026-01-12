@@ -8,9 +8,18 @@ import { env } from "./config/env.js";
 function createApp() {
   const app = express();
 
+  const allowedOrigins = env.clientOrigin
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
-      origin: env.clientOrigin,
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error("Not allowed by CORS"));
+      },
       credentials: true,
     })
   );
